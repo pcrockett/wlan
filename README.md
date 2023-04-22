@@ -16,6 +16,11 @@ If you are moving around, or your list of networks just happens to be omitting a
 wlan --rescan
 ```
 
+This script remembers your history, so you can navigate to previously-selected networks using key bindings:
+
+* Previous history: `Ctrl-p` or `Ctrl-j`
+* Next history: `Ctrl-n` or `Ctrl-k`
+
 ### Dependencies
 
 * [fzf](https://github.com/junegunn/fzf)

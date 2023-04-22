@@ -46,8 +46,20 @@ if [ "${ARG_RESCAN:-}" == "true" ]; then
     NMCLI_ARGS+=(--rescan yes)
 fi
 
+STATE_DIR="${XDG_STATE_HOME:-${HOME}/.local/state}/wlan"
+mkdir --parent "${STATE_DIR}"
+
+FZF_ARGS=(
+    --header-lines 1
+    --ansi
+    --history "${STATE_DIR}/history"
+    --history-size 20
+    --bind ctrl-j:previous-history
+    --bind ctrl-k:next-history
+)
+
 BSSID="$(nmcli "${NMCLI_ARGS[@]}" \
-    | fzf --header-lines 1 --ansi \
+    | fzf "${FZF_ARGS[@]}" \
     | cut --fields 1 --delimiter " ")"
 
 echo "Connecting to BSSID ${BSSID}..." >&2
