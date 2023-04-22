@@ -56,6 +56,8 @@ FZF_ARGS=(
     --history-size 20
     --bind ctrl-j:previous-history
     --bind ctrl-k:next-history
+    --height 15
+    --layout reverse
 )
 
 BSSID="$(nmcli "${NMCLI_ARGS[@]}" \
