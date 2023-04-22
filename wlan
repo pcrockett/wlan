@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+show_usage() {
+    echo "Connect to wireless networks with minimal keystrokes.
+
+Usage:
+    $(basename "${0}") [options]
+
+Available Options:
+    -r, --rescan    Force network rescan
+    -h, --help      Show this message
+"
+}
+
+parse_commandline() {
+
+    while [ "${#}" -gt "0" ]; do
+        case "${1}" in
+            -r|--rescan)
+                ARG_RESCAN="true"
+            ;;
+            -h|--help)
+                ARG_HELP="true"
+            ;;
+            *)
+                echo "Unrecognized argument: ${1}" >&2
+                show_usage
+                exit 1
+            ;;
+        esac
+        shift
+    done
+}
+
+parse_commandline "${@}"
+
+if [ "${ARG_HELP:-}" == "true" ]; then
+    show_usage
+    exit 0
+fi
+
+NMCLI_ARGS=(--colors yes --fields "BSSID,SSID,BARS,IN-USE" device wifi list)
+
+if [ "${ARG_RESCAN:-}" == "true" ]; then
+    NMCLI_ARGS+=(--rescan yes)
+fi
+
+BSSID="$(nmcli "${NMCLI_ARGS[@]}" \
+    | fzf --header-lines 1 --ansi \
+    | cut --fields 1 --delimiter " ")"
+
+echo "Connecting to BSSID ${BSSID}..." >&2
+
+nmcli device wifi connect "${BSSID}"
