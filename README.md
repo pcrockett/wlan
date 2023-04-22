@@ -1,6 +1,6 @@
 ## wlan
 
-Stupid simple `nmcli` wrapper script to switch between wireless networks with just a few keystrokes.
+Simple `nmcli` wrapper script to switch between wireless networks with just a few keystrokes.
 
 ### Usage
 
