@@ -15,6 +15,8 @@ Available Options:
 "
 }
 
+NMCLI="${WLAN_NMCLI:-nmcli}"
+FZF="${WLAN_FZF:-fzf}"
 ARG_COMMAND=
 
 set_command() {
@@ -92,26 +94,25 @@ command:connect() {
     )
 
     if [ "${ARG_QUERY:-}" != "" ]; then
-        fzf_args+=(--query "${ARG_QUERY}" --select-1)
+        fzf_args+=(--query "${ARG_QUERY}" --select-1 --exit-0)
     fi
 
     local bssid
-    bssid="$(nmcli "${nmcli_args[@]}" \
-        | fzf "${fzf_args[@]}" \
+    bssid="$("${NMCLI}" "${nmcli_args[@]}" \
+        | "${FZF}" "${fzf_args[@]}" \
         | cut --fields 1 --delimiter " ")"
 
     echo "Connecting to BSSID ${bssid}..." >&2
 
-    nmcli device wifi connect "${bssid}"
+    "${NMCLI}" device wifi connect "${bssid}"
 }
 
 command:disconnect() {
     # Get all connected `wifi` interfaces from `nmcli device status`, and disconnect each one.
-    # Only tested with a single interface though :-/
 
-    for interface in $(nmcli --terse device status | awk -F ":" '$2 == "wifi" && $3 == "connected" { print $1 }')
+    for interface in $("${NMCLI}" --terse device status | awk -F ":" '$2 == "wifi" && $3 == "connected" { print $1 }')
     do
-        nmcli device disconnect "${interface}"
+        "${NMCLI}" device disconnect "${interface}"
     done
 }
 
