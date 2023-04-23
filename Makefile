@@ -1,5 +1,5 @@
 lint:
-	shellcheck wlan
+	shellcheck wlan tests/*.bats
 .PHONY: lint
 
 test:
