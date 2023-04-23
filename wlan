@@ -2,9 +2,7 @@
 set -Eeuo pipefail
 
 show_usage() {
-    echo "Connect to wireless networks with minimal keystrokes.
-
-Usage:
+    echo "Usage:
     $(basename "${0}") [command] [options] [-- initial query]
 
 Available Commands:
@@ -24,7 +22,8 @@ set_command() {
         ARG_COMMAND="${1}"
     else
         echo "Conflicting commands: \"${ARG_COMMAND}\" and \"${1}\"" >&2
-        show_usage
+        echo >&2
+        show_usage >&2
         exit 1
     fi
 }
@@ -51,7 +50,8 @@ parse_commandline() {
             ;;
             *)
                 echo "Unrecognized argument: ${1}" >&2
-                show_usage
+                echo >&2
+                show_usage >&2
                 exit 1
             ;;
         esac
@@ -62,6 +62,8 @@ parse_commandline() {
 parse_commandline "${@}"
 
 if [ "${ARG_HELP:-}" == "true" ]; then
+    echo "Connect to wireless networks with minimal keystrokes."
+    echo
     show_usage
     exit 0
 fi
