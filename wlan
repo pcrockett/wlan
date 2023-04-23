@@ -5,7 +5,7 @@ show_usage() {
     echo "Connect to wireless networks with minimal keystrokes.
 
 Usage:
-    $(basename "${0}") [command] [options]
+    $(basename "${0}") [command] [options] [-- initial query]
 
 Available Commands:
     c[onnect]        Connect to a network (default)
@@ -43,6 +43,11 @@ parse_commandline() {
             ;;
             -h|--help)
                 ARG_HELP="true"
+            ;;
+            --)
+                shift
+                ARG_QUERY="${*}"
+                return 0
             ;;
             *)
                 echo "Unrecognized argument: ${1}" >&2
@@ -83,6 +88,10 @@ command:connect() {
         --height 15
         --layout reverse
     )
+
+    if [ "${ARG_QUERY:-}" != "" ]; then
+        fzf_args+=(--query "${ARG_QUERY}" --select-1)
+    fi
 
     local bssid
     bssid="$(nmcli "${nmcli_args[@]}" \
