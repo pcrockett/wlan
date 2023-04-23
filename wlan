@@ -5,18 +5,39 @@ show_usage() {
     echo "Connect to wireless networks with minimal keystrokes.
 
 Usage:
-    $(basename "${0}") [options]
+    $(basename "${0}") [command] [options]
+
+Available Commands:
+    c[onnect]        Connect to a network (default)
+    d[isconnect]     Disconnect from a network
 
 Available Options:
-    -r, --rescan    Force network rescan
-    -h, --help      Show this message
+    -r, --rescan     Force network rescan
+    -h, --help       Show this message
 "
 }
 
-parse_commandline() {
+ARG_COMMAND=
 
+set_command() {
+    if [ "${ARG_COMMAND:-}" == "" ]; then
+        ARG_COMMAND="${1}"
+    else
+        echo "Conflicting commands: \"${ARG_COMMAND}\" and \"${1}\"" >&2
+        show_usage
+        exit 1
+    fi
+}
+
+parse_commandline() {
     while [ "${#}" -gt "0" ]; do
         case "${1}" in
+            c|con|connect)
+                set_command connect
+            ;;
+            d|dis|disconnect)
+                set_command disconnect
+            ;;
             -r|--rescan)
                 ARG_RESCAN="true"
             ;;
@@ -40,30 +61,51 @@ if [ "${ARG_HELP:-}" == "true" ]; then
     exit 0
 fi
 
-NMCLI_ARGS=(--colors yes --fields "BSSID,SSID,BARS,IN-USE" device wifi list)
+command:connect() {
+    # Display a colorful list of available wifi networks and allow the user to interactively select one
 
-if [ "${ARG_RESCAN:-}" == "true" ]; then
-    NMCLI_ARGS+=(--rescan yes)
-fi
+    local nmcli_args=(--colors yes --fields "BSSID,SSID,BARS,IN-USE" device wifi list)
 
-STATE_DIR="${XDG_STATE_HOME:-${HOME}/.local/state}/wlan"
-mkdir --parent "${STATE_DIR}"
+    if [ "${ARG_RESCAN:-}" == "true" ]; then
+        nmcli_args+=(--rescan yes)
+    fi
 
-FZF_ARGS=(
-    --header-lines 1
-    --ansi
-    --history "${STATE_DIR}/history"
-    --history-size 20
-    --bind ctrl-j:previous-history
-    --bind ctrl-k:next-history
-    --height 15
-    --layout reverse
-)
+    local state_dir="${XDG_STATE_HOME:-${HOME}/.local/state}/wlan"
+    mkdir --parent "${state_dir}"
 
-BSSID="$(nmcli "${NMCLI_ARGS[@]}" \
-    | fzf "${FZF_ARGS[@]}" \
-    | cut --fields 1 --delimiter " ")"
+    local fzf_args=(
+        --header-lines 1
+        --ansi
+        --history "${state_dir}/history"
+        --history-size 20
+        --bind ctrl-j:previous-history
+        --bind ctrl-k:next-history
+        --height 15
+        --layout reverse
+    )
 
-echo "Connecting to BSSID ${BSSID}..." >&2
+    local bssid
+    bssid="$(nmcli "${nmcli_args[@]}" \
+        | fzf "${fzf_args[@]}" \
+        | cut --fields 1 --delimiter " ")"
 
-nmcli device wifi connect "${BSSID}"
+    echo "Connecting to BSSID ${bssid}..." >&2
+
+    nmcli device wifi connect "${bssid}"
+}
+
+command:disconnect() {
+    # Get all connected `wifi` interfaces from `nmcli device status`, and disconnect each one.
+    # Only tested with a single interface though :-/
+
+    for interface in $(nmcli --terse device status | awk -F ":" '$2 == "wifi" && $3 == "connected" { print $1 }')
+    do
+        nmcli device disconnect "${interface}"
+    done
+}
+
+main() {
+    "command:${ARG_COMMAND:-connect}"
+}
+
+main
