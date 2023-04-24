@@ -8,6 +8,8 @@ show_usage() {
 Available Commands:
     c[onnect]        Connect to a network (default)
     d[isconnect]     Disconnect from a network
+    off              Turn off your WiFi adapter
+    on               Turn on your WiFi adapter
 
 Available Options:
     -r, --rescan     Force network rescan
@@ -38,6 +40,12 @@ parse_commandline() {
             ;;
             d|dis|disconnect)
                 set_command disconnect
+            ;;
+            off)
+                set_command off
+            ;;
+            on)
+                set_command on
             ;;
             -r|--rescan)
                 ARG_RESCAN="true"
@@ -114,6 +122,14 @@ command:disconnect() {
     do
         "${NMCLI}" device disconnect "${interface}"
     done
+}
+
+command:off() {
+    "${NMCLI}" radio wifi off
+}
+
+command:on() {
+    "${NMCLI}" radio wifi on
 }
 
 main() {
