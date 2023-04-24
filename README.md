@@ -53,3 +53,17 @@ change networks even more quickly.
 ```bash
 sudo make install
 ```
+
+### Contributing
+
+If you want to run tests, etc., there are two ways you can go: Install necessary dev dependencies on your computer, or
+install [Podman](https://podman.io/).
+
+#### Podman
+
+Run `make dev-env` to start a Bash prompt inside a container with everything installed. Or use `make ci` if you want to
+run the continuous integration pipeline in the container on your computer.
+
+#### Dev Dependencies
+
+Check out [the Dockerfile](dev-env/Dockerfile) for the most up-to-date list of dev dependencies.

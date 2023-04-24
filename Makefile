@@ -10,14 +10,23 @@ install:
 	install wlan /usr/local/bin/
 .PHONY: install
 
+podman-pull:
+	podman pull docker.io/library/archlinux:latest
+.PHONY: podman-pull
+
 podman-build:
-	podman build --pull --tag "wlan-dev" dev-env
+	podman build --tag wlan-dev dev-env
 .PHONY: podman-build
 
 dev-env: podman-build
-	podman run --rm --interactive --tty --volume "$(shell pwd):/src" wlan-dev:latest
+	podman run --rm --interactive --tty \
+		--volume "$(shell pwd):/src" \
+		localhost/wlan-dev:latest
 .PHONY: dev-env
 
-ci: podman-build
-	podman run --rm --volume "$(shell pwd):/src" wlan-dev:latest /usr/sbin/make lint test
+ci: podman-pull podman-build
+	podman run --rm \
+		--volume "$(shell pwd):/src" \
+		localhost/wlan-dev:latest \
+		/usr/sbin/make lint test
 .PHONY: ci
