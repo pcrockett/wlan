@@ -2,6 +2,8 @@
 
 Simple `nmcli` wrapper script to switch between wireless networks with just a few keystrokes.
 
+![](demo.gif)
+
 ### Usage
 
 The script works with no arguments:
