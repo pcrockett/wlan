@@ -50,6 +50,8 @@ change networks even more quickly.
 
 ### Installation
 
+You can [download the script](https://github.com/pcrockett/wlan/raw/main/wlan), or clone the repository and run
+
 ```bash
 sudo make install
 ```
