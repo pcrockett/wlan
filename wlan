@@ -1,9 +1,21 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-show_usage() {
-    echo "Usage:
-    $(basename "${0}") [command] [options] [-- initial query]
+SCRIPT_NAME="$(basename "${0}")"
+readonly SCRIPT_NAME
+
+NMCLI="${WLAN_NMCLI:-nmcli}"
+readonly NMCLI
+
+FZF="${WLAN_FZF:-fzf}"
+readonly FZF
+
+help:general() {
+    echo "
+Connect to wireless networks with minimal keystrokes.
+
+Usage:
+    ${SCRIPT_NAME} [command] [options]
 
 Available Commands:
     c[onnect]        Connect to a network (default)
@@ -12,46 +24,105 @@ Available Commands:
     on               Turn on your WiFi adapter
 
 Available Options:
+    -h, --help       Show this message
+
+For command-specific help, run \`${SCRIPT_NAME} COMMAND --help\`
+"
+}
+
+help:connect() {
+    echo "
+Connect to a wireless network.
+
+Usage:
+    ${SCRIPT_NAME} connect [options] [-- initial query]
+
+Available Options:
     -r, --rescan     Force network rescan
     -h, --help       Show this message
 "
 }
 
-NMCLI="${WLAN_NMCLI:-nmcli}"
-FZF="${WLAN_FZF:-fzf}"
-ARG_COMMAND=
+help:disconnect() {
+    echo "
+Disconnect from a wireless network.
 
-set_command() {
-    if [ "${ARG_COMMAND:-}" == "" ]; then
-        ARG_COMMAND="${1}"
-    else
-        echo "Conflicting commands: \"${ARG_COMMAND}\" and \"${1}\"" >&2
-        echo >&2
-        show_usage >&2
-        exit 1
-    fi
+Usage:
+    ${SCRIPT_NAME} disconnect
+"
 }
 
-parse_commandline() {
+help:off() {
+    echo "
+Turn your wireless radio off.
+
+Usage:
+    ${SCRIPT_NAME} off
+"
+}
+
+help:on() {
+    echo "
+Turn your wireless radio on.
+
+Usage:
+    ${SCRIPT_NAME} on
+"
+}
+
+parse_cli_args() {
+    ARG_COMMAND=connect
+    ARG_COMMAND_IMPLICIT="true"
+
+    if [ "${#}" -eq 0 ]; then
+        return 0
+    fi
+
+    case "${1}" in
+        c|con|connect)
+            ARG_COMMAND=connect
+            ARG_COMMAND_IMPLICIT="false"
+            shift
+        ;;
+        d|dis|disconnect)
+            ARG_COMMAND=disconnect
+            shift
+        ;;
+        off)
+            ARG_COMMAND=off
+            shift
+        ;;
+        on)
+            ARG_COMMAND=on
+            shift
+        ;;
+        -h|--help|help)
+            ARG_HELP="general"
+            return 0
+        ;;
+        *)
+            ARG_COMMAND=connect
+        ;;
+    esac
+
+    "parse:${ARG_COMMAND}" "${@}"
+}
+
+on_unrecognized_argument() {
+    echo "Unrecognized argument: \"${1}\"" >&2
+    "help:${ARG_HELP:-${ARG_COMMAND}}" >&2
+}
+
+parse:connect() {
     while [ "${#}" -gt "0" ]; do
         case "${1}" in
-            c|con|connect)
-                set_command connect
-            ;;
-            d|dis|disconnect)
-                set_command disconnect
-            ;;
-            off)
-                set_command off
-            ;;
-            on)
-                set_command on
-            ;;
             -r|--rescan)
                 ARG_RESCAN="true"
+                shift
             ;;
             -h|--help)
-                ARG_HELP="true"
+                ARG_HELP="${ARG_COMMAND}"
+                return 0
             ;;
             --)
                 shift
@@ -59,24 +130,62 @@ parse_commandline() {
                 return 0
             ;;
             *)
-                echo "Unrecognized argument: ${1}" >&2
-                echo >&2
-                show_usage >&2
+                if [ "${ARG_COMMAND_IMPLICIT:-}" == "true" ]; then
+                    # `connect` is the default command, so the user didn't type that
+                    # in. They need to see general help, not `connect` help.
+                    ARG_HELP=general
+                fi
+                on_unrecognized_argument "${@}"
                 exit 1
             ;;
         esac
-        shift
     done
 }
 
-parse_commandline "${@}"
+parse:disconnect() {
+    while [ "${#}" -gt "0" ]; do
+        case "${1}" in
+            -h|--help)
+                ARG_HELP="${ARG_COMMAND}"
+                return 0
+            ;;
+            *)
+                on_unrecognized_argument "${@}"
+                exit 1
+            ;;
+        esac
+    done
+}
 
-if [ "${ARG_HELP:-}" == "true" ]; then
-    echo "Connect to wireless networks with minimal keystrokes."
-    echo
-    show_usage
-    exit 0
-fi
+parse:off() {
+    while [ "${#}" -gt "0" ]; do
+        case "${1}" in
+            -h|--help)
+                ARG_HELP="${ARG_COMMAND}"
+                return 0
+            ;;
+            *)
+                on_unrecognized_argument "${@}"
+                exit 1
+            ;;
+        esac
+    done
+}
+
+parse:on() {
+    while [ "${#}" -gt "0" ]; do
+        case "${1}" in
+            -h|--help)
+                ARG_HELP="${ARG_COMMAND}"
+                return 0
+            ;;
+            *)
+                on_unrecognized_argument "${@}"
+                exit 1
+            ;;
+        esac
+    done
+}
 
 command:connect() {
     # Display a colorful list of available wifi networks and allow the user to interactively select one
@@ -135,7 +244,12 @@ command:on() {
 }
 
 main() {
+    if [ "${ARG_HELP:-}" != "" ]; then
+        "help:${ARG_HELP}"
+        exit 0
+    fi
     "command:${ARG_COMMAND:-connect}"
 }
 
+parse_cli_args "${@}"
 main
