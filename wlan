@@ -81,7 +81,7 @@ fi
 command:connect() {
     # Display a colorful list of available wifi networks and allow the user to interactively select one
 
-    local nmcli_args=(--colors yes --fields "BSSID,SSID,BARS,IN-USE" device wifi list)
+    local nmcli_args=(--colors yes --fields "BSSID,SSID,BARS,CHAN,FREQ,IN-USE" device wifi list)
 
     if [ "${ARG_RESCAN:-}" == "true" ]; then
         nmcli_args+=(--rescan yes)
