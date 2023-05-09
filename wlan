@@ -83,8 +83,9 @@ command:connect() {
 
     local nmcli_args=(--colors yes --fields "BSSID,SSID,BARS,CHAN,FREQ,IN-USE" device wifi list)
 
+    local nmcli_rescan=()
     if [ "${ARG_RESCAN:-}" == "true" ]; then
-        nmcli_args+=(--rescan yes)
+        nmcli_rescan+=(--rescan yes)
     fi
 
     local state_dir="${XDG_STATE_HOME:-${HOME}/.local/state}/wlan"
@@ -97,6 +98,7 @@ command:connect() {
         --history-size 20
         --bind ctrl-j:previous-history
         --bind ctrl-k:next-history
+        --bind "ctrl-r:reload(${NMCLI} ${nmcli_args[*]} --rescan yes || true;)"
         --height 15
         --layout reverse
     )
@@ -106,8 +108,8 @@ command:connect() {
     fi
 
     local bssid
-    bssid="$("${NMCLI}" "${nmcli_args[@]}" \
-        | "${FZF}" "${fzf_args[@]}" \
+    bssid="$("${NMCLI}" "${nmcli_args[@]}" "${nmcli_rescan[@]}" \
+        | SHELL="sh" "${FZF}" "${fzf_args[@]}" \
         | cut --fields 1 --delimiter " ")"
 
     echo "Connecting to BSSID ${bssid}..." >&2

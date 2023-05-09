@@ -29,6 +29,10 @@ lo:loopback:unmanaged:"
 
 fzf_mock() {
     cat > /dev/null
+    if [ "${SHELL}" != "sh" ]; then
+        echo "Wrong shell: ${SHELL}" 1>&2
+        return 1
+    fi
     echo "01:23:45:67:89:0A gooberschnit ▂▄▆█ "
 }
 
